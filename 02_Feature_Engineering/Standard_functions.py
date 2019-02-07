@@ -113,3 +113,27 @@ def plot_fit_score_pred(df, X_tr, X_val, y_tr, y_val):
     print('And we\'ve predicted',vals[0],'non-re-orders and',
     vals[1],'re-orders.')
     
+    
+def fit_score_pred(X_tr, X_val, y_tr, y_val):
+    """    
+    Takes a DataFrame, training, and validation data as its input.
+    Returns f1-score, features and their coefficients, and predicted non-re-orders and re-orders.
+    """
+    
+    reduced_df = df.drop(['product_id','user_id',
+                        'latest_cart','in_cart'],axis=1)
+    
+
+    
+    features = reduced_df.columns
+    
+    lr = LogisticRegression(solver='lbfgs')
+    lr.fit(X_tr, y_tr)
+    vals = pd.DataFrame(lr.predict(X_val))[0].value_counts()
+    coefs = [round(x,4) for x in lr.coef_.tolist()[0]]
+    print('Our f1-score is',f1_score(lr.predict(X_val), y_val))
+    print('The coefficients are: \n',
+          pd.DataFrame(list(zip(features,coefs)),
+                columns=['Features','Coefficients']))
+    print('And we\'ve predicted',vals[0],'non-re-orders and',
+    vals[1],'re-orders.')
