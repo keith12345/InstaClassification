@@ -11,6 +11,7 @@ from sklearn.metrics import f1_score
 from sklearn.model_selection import KFold
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
 
  #####################
  # Plotting Features #
@@ -180,7 +181,7 @@ def kfold_val_fit_score_pred_G_NB(df, val_size=.2, seed=42):
     model_results = [] #collect the validation results for both models
         
     for train_ids, val_ids in kf.split(ids,ids):
-        
+        print(1)
         X_train, y_train = df.iloc[train_ids], df.iloc[train_ids]
         X_val, y_val = df.iloc[val_ids], df.iloc[val_ids] 
         
@@ -189,7 +190,7 @@ def kfold_val_fit_score_pred_G_NB(df, val_size=.2, seed=42):
         X_val = pd.DataFrame(X_val).drop(['in_cart','user_id'],axis=1)
         y_val = pd.DataFrame(y_val).in_cart
         
-        clf = GaussianNB()
+        clf = GaussianNB(var_smoothing=1e-20)
         clf.fit(X_train, y_train)
         vals = pd.DataFrame(clf.predict(X_val))[0].value_counts()
     
@@ -197,6 +198,42 @@ def kfold_val_fit_score_pred_G_NB(df, val_size=.2, seed=42):
         
     print('Individual f-1 score: ', model_results)
     print(f'Average f1-score: {np.mean(model_results):.3f} +- {np.std(model_results):.3f}') 
+    
+    
+def kfold_val_fit_score_pred_M_NB(df, val_size=.2, seed=42):
+    
+    df = df.drop(['product_id','latest_cart'],axis=1)
+    
+    df.diff_between_average_and_current_order_time = (
+        df.diff_between_average_and_current_order_time 
+        + abs(df.diff_between_average_and_current_order_time.min()))
+    
+    ids = pd.DataFrame(df.user_id)
+    
+    kf = KFold(n_splits=5, shuffle=True, random_state = seed)
+    model_results = [] #collect the validation results for both models
+        
+    for train_ids, val_ids in kf.split(ids,ids):
+        print(1)
+        X_train, y_train = df.iloc[train_ids], df.iloc[train_ids]
+        X_val, y_val = df.iloc[val_ids], df.iloc[val_ids] 
+        
+        X_train = pd.DataFrame(X_train).drop(['in_cart','user_id'],axis=1)
+        y_train = pd.DataFrame(y_train).in_cart
+        X_val = pd.DataFrame(X_val).drop(['in_cart','user_id'],axis=1)
+        y_val = pd.DataFrame(y_val).in_cart
+        
+        clf = MultinomialNB()
+        clf.fit(X_train, y_train)
+        vals = pd.DataFrame(clf.predict(X_val))[0].value_counts()
+    
+        model_results.append(f1_score(clf.predict(X_val), y_val))
+        
+    print('Individual f-1 score: ', model_results)
+    print(f'Average f1-score: {np.mean(model_results):.3f} +- {np.std(model_results):.3f}')     
+    
+    
+    
     
     
     
@@ -226,3 +263,19 @@ def kfold_val_fit_score_pred_RF(df, val_size=.2, seed=42):
         
     print('Individual f-1 score: ', model_results)
     print(f'Average f1-score: {np.mean(model_results):.3f} +- {np.std(model_results):.3f}') 
+    
+
+    
+    
+def fit_score_pred_RF(df, X_tr, X_val, y_tr, y_val):
+    """    
+    Takes a DataFrame, training, and validation data as its input.
+    Returns f1-score, features and their coefficients, and predicted non-re-orders and re-orders.
+    """
+    
+    rfc = RandomForestClassifier(n_estimators=10)
+    rfc.fit(X_train, y_train)        
+    vals = pd.DataFrame(rfc.predict(X_val))[0].value_counts()
+    print('Our f1-score is',f1_score(rfc.predict(X_val), y_val))
+    print('And we\'ve predicted',vals[0],'non-re-orders and',
+    vals[1],'re-orders.')
