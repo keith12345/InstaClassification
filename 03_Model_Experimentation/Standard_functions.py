@@ -115,6 +115,7 @@ def plot_fit_score_pred(df, X_tr, X_val, y_tr, y_val):
                 columns=['Features','Coefficients']))
     print('And we\'ve predicted',vals[0],'non-re-orders and',
     vals[1],'re-orders.')
+
     
 def fit_score_pred(df, X_tr, X_val, y_tr, y_val):
     """    
@@ -181,7 +182,7 @@ def kfold_val_fit_score_pred_G_NB(df, val_size=.2, seed=42):
     model_results = [] #collect the validation results for both models
         
     for train_ids, val_ids in kf.split(ids,ids):
-        print(1)
+        
         X_train, y_train = df.iloc[train_ids], df.iloc[train_ids]
         X_val, y_val = df.iloc[val_ids], df.iloc[val_ids] 
         
@@ -214,7 +215,6 @@ def kfold_val_fit_score_pred_M_NB(df, val_size=.2, seed=42):
     model_results = [] #collect the validation results for both models
         
     for train_ids, val_ids in kf.split(ids,ids):
-        print(1)
         X_train, y_train = df.iloc[train_ids], df.iloc[train_ids]
         X_val, y_val = df.iloc[val_ids], df.iloc[val_ids] 
         
