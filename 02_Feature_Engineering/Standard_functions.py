@@ -190,7 +190,7 @@ def kfold_val_fit_score_pred_G_NB(df, val_size=.2, seed=42):
         
         print(X_train.columns.tolist())
         
-        clf = GaussianNB(var_smoothing=1e-20)
+        clf = GaussianNB(var_smoothing=1e-9)
         clf.fit(X_train, y_train)
         vals = pd.DataFrame(clf.predict(X_val))[0].value_counts()
     
@@ -279,3 +279,17 @@ def fit_score_pred_RF(df, X_tr, X_val, y_tr, y_val):
     print('Our f1-score is',f1_score(rfc.predict(X_val), y_val))
     print('And we\'ve predicted',vals[0],'non-re-orders and',
     vals[1],'re-orders.')
+    
+def fit_score_pred_G_NB(X_tr, X_val, y_tr, y_val):
+    """    
+    Takes a DataFrame, training, and validation data as its input.
+    Returns f1-score, features and their coefficients, and predicted non-re-orders and re-orders.
+    """
+    
+    clf = GaussianNB(var_smoothing=1e-9)
+    clf.fit(X_tr, y_tr)
+    vals = pd.DataFrame(clf.predict(X_val))[0].value_counts()
+    print('Our f1-score is',f1_score(rfc.predict(X_val), y_val))
+    print('And we\'ve predicted',vals[0],'non-re-orders and',
+    vals[1],'re-orders.')
+    
