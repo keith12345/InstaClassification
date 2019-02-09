@@ -19,38 +19,125 @@ from sklearn.naive_bayes import GaussianNB, MultinomialNB
  # Training and Test for Submission #
  ####################################
 
-def submit_fit_score_pred_log(df, test_ids):
-    """    
-    Takes a DataFrame, training, and validation data as its input.
-    Returns f1-score, features and their coefficients, and predicted non-re-orders and re-orders.
-    """
+def submit_fit_score_pred_log(train_df, test_df, final_order_id):
     
-    y = df['in_cart']
-    X = df.drop(['product_id','user_id',
+    test_ids = test_df.loc[:,['product_id','user_id']]
+    X_test = test_df.drop(['product_id','user_id'],axis=1) 
+    
+    X_train = train_df.drop(['product_id','user_id',
                           'latest_cart','in_cart'],axis=1) 
-    
-    X_pred = X.loc[test_ids.user_id]
-    X_pred.reset_index(drop=True,inplace=True)
-    test_ids.reset_index(drop=True,inplace=True)
+    y_train = train_df['in_cart']
     
     lr = LogisticRegression()
-    lr.fit(X, y)
-    predictions = pd.DataFrame(lr.predict(X_pred))
+    lr.fit(X_train, y_train)
+    predictions = pd.DataFrame(lr.predict(X_test))
     
     output = pd.merge(test_ids,predictions,
                       left_index=True,right_index=True)
+    
+    output = pd.merge(output,final_order_id,
+                      on='user_id')
+    
+    output.columns = ['product_id','user_id',
+                      'prediction','order_id']
+    
+    return output
+
+def submit_fit_score_pred_G_NB(train_df, test_df, final_order_id):
+    
+    test_ids = test_df.loc[:,['product_id','user_id']]
+    X_test = test_df.drop(['product_id','user_id'],axis=1) 
+    
+    X_train = train_df.drop(['product_id','user_id',
+                          'latest_cart','in_cart'],axis=1) 
+    y_train = train_df['in_cart']
+    
+    gnb = GaussianNB()
+    gnb.fit(X_train, y_train)
+    predictions = pd.DataFrame(gnb.predict(X_test))
+    
+    output = pd.merge(test_ids,predictions,
+                      left_index=True,right_index=True)
+    
+    output = pd.merge(output,final_order_id,
+                      on='user_id')
+    
+    output.columns = ['product_id','user_id',
+                      'prediction','order_id']
+    
+    return output
+
+
+def submit_fit_score_pred_rfc(train_df, test_df, final_order_id):
+    
+    test_ids = test_df.loc[:,['product_id','user_id']]
+    X_test = test_df.drop(['product_id','user_id'],axis=1) 
+    
+    X_train = train_df.drop(['product_id','user_id',
+                          'latest_cart','in_cart'],axis=1) 
+    y_train = train_df['in_cart']
+    
+    rfc = RandomForestClassifier()
+    rfc.fit(X_train, y_train)
+    predictions = pd.DataFrame(rfc.predict(X_test))
+    
+    output = pd.merge(test_ids,predictions,
+                      left_index=True,right_index=True)
+    
+    output = pd.merge(output,final_order_id,
+                      on='user_id')
+    
+    output.columns = ['product_id','user_id',
+                      'prediction','order_id']
     
     return output
 
 
 
-#def products_concat(series):
-#    out = ''
-#    for product in series:
-#       if product > 0:
-#            out = out + str(int(product)) + ' '
-#    
-#    if out != '':
-#        return out.rstrip()
-#    else:
-#        return 'None'
+def submit_fit_score_pred_rfc(train_df, test_df, final_order_id):
+    
+    test_ids = test_df.loc[:,['product_id','user_id']]
+    X_test = test_df.drop(['product_id','user_id'],axis=1) 
+    
+    X_train = train_df.drop(['product_id','user_id',
+                          'latest_cart','in_cart'],axis=1) 
+    y_train = train_df['in_cart']
+    
+    mnb = MultinomialNB()
+    mnb.fit(X_train, y_train)
+    predictions = pd.DataFrame(mnb.predict(X_test))
+    
+    output = pd.merge(test_ids,predictions,
+                      left_index=True,right_index=True)
+    
+    output = pd.merge(output,final_order_id,
+                      on='user_id')
+    
+    output.columns = ['product_id','user_id',
+                      'prediction','order_id']
+    
+    return output
+
+
+##################################
+#   Formatting for Submission    #
+##################################
+
+def products_concat(series):
+    out = ''
+    for product in series:
+        if product > 0:
+            out = out + str(int(product)) + ' '
+    
+    if out != '':
+        return out.rstrip()
+    else:
+        return 'None'
+    
+def format_for_submission(predictions):
+    predictions['prediction'] = predictions.product_id * predictions.prediction
+    predictions.drop('product_id',axis=1,inplace=True)
+    predictions = (pd.DataFrame(predictions.groupby('order_id')
+                    ['prediction'].apply(products_concat)).reset_index())
+    predictions.columns = ['order_id','products']
+    return predictions
