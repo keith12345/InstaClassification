@@ -296,26 +296,3 @@ def fit_score_pred_G_NB(X_tr, X_val, y_tr, y_val):
     
     
     
- ####################################
- # Training and Test for Submission #
- ####################################
-
-def submit_fit_score_pred_log(df_train, df_test):
-    """    
-    Takes a DataFrame, training, and validation data as its input.
-    Returns f1-score, features and their coefficients, and predicted non-re-orders and re-orders.
-    """
-    
-    y_tr = df_train['in_cart']
-    X_tr = df_train.drop(['product_id','user_id',
-                          'latest_cart','in_cart'],axis=1) 
-    test_user_ids = pd.DataFrame(df_test['user_id'])
-    
-    lr = LogisticRegression(solver='lbfgs')
-    lr.fit(X_tr, y_tr)
-    predictions = pd.DataFrame(lr.predict(X_pred))
-    
-    output = pd.merge(test_user_ids,predictions,
-                      left_index=True,right_index=True)
-    
-    return output
