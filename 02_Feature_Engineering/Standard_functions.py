@@ -234,9 +234,6 @@ def kfold_val_fit_score_pred_M_NB(df, val_size=.2, seed=42):
     
     
     
-    
-    
-    
 def kfold_val_fit_score_pred_RF(df, val_size=.2, seed=42):
     
     df = df.drop(['product_id','latest_cart'],axis=1)

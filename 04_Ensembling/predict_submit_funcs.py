@@ -19,7 +19,7 @@ from sklearn.naive_bayes import GaussianNB, MultinomialNB
  # Training and Test for Submission #
  ####################################
 
-def submit_fit_score_pred_log(train_df, test_df, final_order_id):
+def submit_fit_score_pred_log(train_df, test_df, final_order_id,C=10000):
     
     test_ids = test_df.loc[:,['product_id','user_id']]
     X_test = test_df.drop(['product_id','user_id'],axis=1) 
@@ -28,7 +28,7 @@ def submit_fit_score_pred_log(train_df, test_df, final_order_id):
                           'latest_cart','in_cart'],axis=1) 
     y_train = train_df['in_cart']
     
-    lr = LogisticRegression()
+    lr = LogisticRegression(solver='liblinear',C=C)
     lr.fit(X_train, y_train)
     predictions = pd.DataFrame(lr.predict(X_test))
     
@@ -41,7 +41,7 @@ def submit_fit_score_pred_log(train_df, test_df, final_order_id):
     output.columns = ['product_id','user_id',
                       'prediction','order_id']
     
-    return output
+    return output, lr
 
 def submit_fit_score_pred_G_NB(train_df, test_df, final_order_id):
     
@@ -65,7 +65,7 @@ def submit_fit_score_pred_G_NB(train_df, test_df, final_order_id):
     output.columns = ['product_id','user_id',
                       'prediction','order_id']
     
-    return output
+    return output, gnb
 
 
 def submit_fit_score_pred_rfc(train_df, test_df, final_order_id):
@@ -77,7 +77,7 @@ def submit_fit_score_pred_rfc(train_df, test_df, final_order_id):
                           'latest_cart','in_cart'],axis=1) 
     y_train = train_df['in_cart']
     
-    rfc = RandomForestClassifier()
+    rfc = RandomForestClassifier(n_estimators=10, n_jobs=4)
     rfc.fit(X_train, y_train)
     predictions = pd.DataFrame(rfc.predict(X_test))
     
@@ -90,11 +90,18 @@ def submit_fit_score_pred_rfc(train_df, test_df, final_order_id):
     output.columns = ['product_id','user_id',
                       'prediction','order_id']
     
-    return output
+    return output, rfc
 
 
-
-def submit_fit_score_pred_rfc(train_df, test_df, final_order_id):
+def submit_fit_score_pred_M_NB(train_df, test_df, final_order_id):
+    
+    train_df.diff_between_average_and_current_order_time = (
+        train_df.diff_between_average_and_current_order_time 
+        + abs(train_df.diff_between_average_and_current_order_time.min()))
+    
+    test_df.diff_between_average_and_current_order_time = (
+        test_df.diff_between_average_and_current_order_time 
+        + abs(test_df.diff_between_average_and_current_order_time.min()))    
     
     test_ids = test_df.loc[:,['product_id','user_id']]
     X_test = test_df.drop(['product_id','user_id'],axis=1) 
@@ -116,7 +123,8 @@ def submit_fit_score_pred_rfc(train_df, test_df, final_order_id):
     output.columns = ['product_id','user_id',
                       'prediction','order_id']
     
-    return output
+    return output, mnb
+
 
 
 ##################################
@@ -135,9 +143,9 @@ def products_concat(series):
         return 'None'
     
 def format_for_submission(predictions):
-    predictions['prediction'] = predictions.product_id * predictions.prediction
-    predictions.drop('product_id',axis=1,inplace=True)
+    predictions['product_id'] = predictions.prediction * predictions.product_id
+    predictions.drop('prediction',axis=1,inplace=True)
     predictions = (pd.DataFrame(predictions.groupby('order_id')
-                    ['prediction'].apply(products_concat)).reset_index())
+                    ['product_id'].apply(products_concat)).reset_index())
     predictions.columns = ['order_id','products']
     return predictions
